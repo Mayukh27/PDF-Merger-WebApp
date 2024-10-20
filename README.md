@@ -21,9 +21,10 @@ This web application allows users to merge multiple PDF files and select specifi
 git clone https://github.com/Mayukh27/pdf-merger-webapp.git cd pdf-merger-webapp
 
 2. Install the required Python packages:
-pip install flask PyPDF2
+pip install flask
+pip install PyPDF2
 
-3. Run the Flask application:
+4. Run the Flask application:
 python app.py
 
 Edit
