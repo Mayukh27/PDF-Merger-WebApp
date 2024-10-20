@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Merger</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Merge Your PDFs</h1>
+        <form id="myForm">
+            <input type="number" id="num_pdfs" placeholder="Enter the number of PDFs" required>
+            <button type="button" id="add-pdfs">Add PDFs</button>
+            <div id="pdf-inputs"></div>
+        </form>
+        <button type="button" id="download-pdf">Download Merged PDF</button>
+        <div id="output"></div>
+    </div>
+
+    <script>
+      const addPdfsBtn = document.getElementById('add-pdfs');
+const pdfInputsDiv = document.getElementById('pdf-inputs');
+const outputDiv = document.getElementById('output');
+const downloadPdfBtn = document.getElementById('download-pdf');
+
+addPdfsBtn.addEventListener('click', () => {
+    console.log('Add PDFs button clicked');
+    const numPdfsInput = document.getElementById('num_pdfs');
+    const numPdfs = parseInt(numPdfsInput.value);
+    pdfInputsDiv.innerHTML = '';
+    for (let i = 0; i < numPdfs; i++) {
+        const pdfBlock = document.createElement('div');
+        pdfBlock.innerHTML = `
+            PDF ${i+1}: <br>
+            <input type="file" id="pdf_${i}" accept="application/pdf" required>
+            Page numbers (comma separated): <input type="text" id="page_numbers_${i}" placeholder="e.g. 1,2,3" required>
+        `;
+        pdfInputsDiv.appendChild(pdfBlock);
+    }
+});
+downloadPdfBtn.addEventListener('click', async () => {
+    console.log('Download Merged PDF button clicked');
+    const numPdfsInput = document.getElementById('num_pdfs');
+    const numPdfs = parseInt(numPdfsInput.value);
+    const formData = new FormData();
+
+    for (let i = 0; i < numPdfs; i++) {
+        const pdfInput = document.getElementById(`pdf_${i}`);
+        const pageNumbersInput = document.getElementById(`page_numbers_${i}`);
+        
+        if (pdfInput.files.length > 0 && pageNumbersInput.value.trim() !== '') {
+            formData.append('pdf_files[]', pdfInput.files[0]);
+            formData.append('page_numbers[]', pageNumbersInput.value.trim());
+        } else {
+            console.error(`Missing file or page numbers for PDF ${i+1}`);
+            outputDiv.textContent = `Please provide both file and page numbers for PDF ${i+1}`;
+            return;
+        }
+    }
+
+    try {
+        const response = await fetch('/merge_pdfs', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = 'merged.pdf';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('Error:', error);
+        outputDiv.textContent = 'Error merging PDFs. Please try again.';
+    }
+});
+
+    </script>
+</body>
+</html>
